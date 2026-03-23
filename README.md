@@ -29,12 +29,15 @@ The goal is to keep the structure **simple, modular, and extendable**, without u
 The project follows a simple and scalable structure:
 
 ```
-backend/
-├── main.py                # Application entry point
-├── api/
-│   └── endpoints/         # API routes (entry points)
-├── models/                # Pydantic schemas (input/output validation)
-├── services/              # Core logic (LLM, data processing, etc.)
+Template/
+├─ backend/
+│  ├─ main.py
+│  └─ ...
+├─ frontend/
+│  ├─ app.py
+│  └─ ...
+├─ docker-compose.yml
+└─ README.md
 ```
 
 ### Request Flow
@@ -55,30 +58,21 @@ Response (JSON)
 
 ## How to run the project
 
-### 1. Activate environment
+### Method 1: Using Docker 
 
-```
-conda activate env
-```
+This is the easiest way to run the project. It handles all dependencies and sets up both the frontend and backend simultaneously. It also includes volume mounts, so any changes you make to the code will automatically reload in the containers!
 
-### 2. Install dependencies
+###1. Build and start the containers
+`docker compose up --build`
+###2. Open in browser
 
-```
-pip install -r requirements.txt
-```
+* Front end: http://localhost:8501/
+* API root: http://localhost:8000/
+* Swagger docs: http://localhost:8000/docs
+* 
+###3. Stop the containers**
+`docker compose down`
 
-### 3. Start the server
-
-```
-python -m uvicorn backend.main:app --reload
-```
-
-### 4. Open in browser
-
-* API root: http://127.0.0.1:8000/
-* Swagger docs: http://127.0.0.1:8000/docs
-
----
 
 ## Testing the API
 
@@ -98,15 +92,15 @@ This repository serves as a **foundation for personal projects**
 
 ## Future Extensions (Optional)
 
-* Add Streamlit frontend (`frontend/`)
 * Add lightweight database (SQLite)
-* Add Docker for reproducibility
+* Develop Docker
+* Update Streamlit frontend
 * Add basic testing and CI
 
 ---
 
 ## Summary
 
-This project is a **lightweight, flexible backend template** that will evolve into a collection of **data science and LLM-based applications**, each built using a consistent and clean architecture.
+This project is a **lightweight, backend and minimal frontend template** that will later on evolve into a collection of **data science and LLM-based applications**.
 
 It is intentionally simple to allow rapid experimentation and iteration.
