@@ -70,7 +70,7 @@ This is the easiest way to run the project. It handles all dependencies and sets
 * API root: http://localhost:8000/
 * Swagger docs: http://localhost:8000/docs
 * 
-### 3. Stop the containers**
+### 3. Stop the containers
 `docker compose down`
 
 
