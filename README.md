@@ -62,15 +62,15 @@ Response (JSON)
 
 This is the easiest way to run the project. It handles all dependencies and sets up both the frontend and backend simultaneously. It also includes volume mounts, so any changes you make to the code will automatically reload in the containers!
 
-###1. Build and start the containers
+### 1. Build and start the containers
 `docker compose up --build`
-###2. Open in browser
+### 2. Open in browser
 
 * Front end: http://localhost:8501/
 * API root: http://localhost:8000/
 * Swagger docs: http://localhost:8000/docs
 * 
-###3. Stop the containers**
+### 3. Stop the containers**
 `docker compose down`
 
 
