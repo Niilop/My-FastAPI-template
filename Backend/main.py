@@ -1,10 +1,25 @@
 # backend/main.py
-from fastapi import FastAPI
-from fastapi import Depends
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from api.endpoints import example
 from core.config import Settings, get_settings
 
 app = FastAPI(title="DS POC API")
+
+# Configure CORS middleware
+origins = [
+    "http://localhost",
+    "http://localhost:8501", # Allow your Streamlit frontend
+    "http://localhost:3000", # Common for React/Vue
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"], # Allows all headers
+)
 
 # Include routes
 app.include_router(example.router)
