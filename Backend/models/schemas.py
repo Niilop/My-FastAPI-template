@@ -10,3 +10,10 @@ class ExampleRequest(BaseModel):
 
 class ExampleResponse(BaseModel):
     result: str
+
+# NEW AI Models
+class SummaryRequest(BaseModel):
+    text: str
+
+class SummaryResponse(BaseModel):
+    summary: str

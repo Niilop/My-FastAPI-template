@@ -1,7 +1,7 @@
 # backend/main.py
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from api.endpoints import example
+from api.endpoints import example, llm
 from core.config import Settings, get_settings
 
 app = FastAPI(title="DS POC API")
@@ -23,6 +23,7 @@ app.add_middleware(
 
 # Include routes
 app.include_router(example.router)
+app.include_router(llm.router)
 
 # Root endpoint
 @app.get("/")
