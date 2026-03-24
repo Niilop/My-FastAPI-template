@@ -6,8 +6,10 @@ WORKDIR /app
 # Copy only backend folder contents into /app
 COPY ./backend /app
 
+COPY requirements.txt /app/
+
 # Install dependencies (adjust if you have requirements.txt)
-RUN pip install fastapi uvicorn
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Run the app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

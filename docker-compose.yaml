@@ -5,10 +5,13 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     volumes:
       - ./backend:/app   # <-- Mount local backend code
     command: >
       uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      
 
   frontend:
     build:
@@ -16,6 +19,8 @@ services:
       dockerfile: frontend/Dockerfile
     ports:
       - "8501:8501"
+    env_file:
+      - .env
     volumes:
       - ./frontend:/app  # <-- Mount local frontend code
     command: >
