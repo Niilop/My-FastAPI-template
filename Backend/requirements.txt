@@ -6,3 +6,4 @@ pydantic-settings
 python-dotenv
 langchain
 langchain_google_genai
+slowapi

@@ -4,11 +4,11 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000" # Only accessible from this computer
     env_file:
       - .env
     volumes:
-      - ./backend:/app   # <-- Mount local backend code
+      - ./backend:/app:ro   # <-- Mount local backend code, Added :ro to make it read-only
     command: >
       uvicorn main:app --host 0.0.0.0 --port 8000 --reload
       
@@ -18,10 +18,10 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
     ports:
-      - "8501:8501"
+      - "127.0.0.1:8501:8501" # Only accessible from this computer
     env_file:
       - .env
     volumes:
-      - ./frontend:/app  # <-- Mount local frontend code
+      - ./frontend:/app:ro  # <-- Mount local frontend code, Added :ro to make it read-only
     command: >
       streamlit run app.py --server.port=8501 --server.address=0.0.0.0

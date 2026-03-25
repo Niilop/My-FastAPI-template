@@ -1,13 +1,19 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from models.schemas import SummaryRequest, SummaryResponse
 from services.llm_service import summarize_text
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 router = APIRouter(prefix="/llm", tags=["AI Solutions"])
 
+# Create a local reference to the limiter
+limiter = Limiter(key_func=get_remote_address)
+
 @router.post("/summarize", response_model=SummaryResponse)
-def run_summarization(request: SummaryRequest):
+@limiter.limit("5/minute")
+def run_summarization(request: Request, body: SummaryRequest):
     try:
-        result = summarize_text(request.text)
+        result = summarize_text(body.text)
         return SummaryResponse(summary=result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

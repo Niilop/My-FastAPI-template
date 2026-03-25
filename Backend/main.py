@@ -8,17 +8,20 @@ app = FastAPI(title="DS POC API")
 
 # Configure CORS middleware
 origins = [
-    "http://localhost",
-    "http://localhost:8501", # Allow your Streamlit frontend
-    "http://localhost:3000", # Common for React/Vue
+    "http://localhost:8501",   # Active: Streamlit frontend
+    "http://127.0.0.1:8501",   # Active: Streamlit frontend (IP format)
+    
+    # FUTURE REACT FRONTEND PORTS:
+    # "http://localhost:3000", # Inactive: Standard Create React App port
+    # "http://localhost:5173", # Inactive: Modern React (Vite) port
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"], # Allows all methods (GET, POST, etc.)
-    allow_headers=["*"], # Allows all headers
+    allow_methods=["GET", "POST"], # Restrict to only the methods you actually use
+    allow_headers=["*"], # Can be restricted further to ["Authorization", "Content-Type", "X-API-Key"]
 )
 
 # Include routes
