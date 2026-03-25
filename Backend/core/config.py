@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     api_key: SecretStr
     debug: bool = True
     gemini_model: str
+    
+    cors_origins: list[str] = [
+        "http://localhost:8501", 
+        "http://127.0.0.1:8501"
+    ]
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
