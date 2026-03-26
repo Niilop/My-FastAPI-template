@@ -1,32 +1,125 @@
-# frontend/app.py
 import streamlit as st
 import requests
 
-st.title("DS POC App 🚀")
+# Configuration
+API_URL = "http://backend:8000/"
 
-st.write("Simple frontend connected to FastAPI")
+# Initialize session state for auth token
+if "access_token" not in st.session_state:
+    st.session_state.access_token = None
 
-# Inputs
-name = st.text_input("Enter your name")
-task = st.text_input("Enter a task")
+def get_headers():
+    if st.session_state.access_token:
+        return {"Authorization": f"Bearer {st.session_state.access_token}"}
+    return {}
 
-# Button
-if st.button("Send Request"):
-    url = "http://backend:8000/example/"
+st.set_page_config(page_title="DS API Tester", layout="wide")
+st.title("🚀 DS API Tester")
 
-    payload = {
-        "name": name,
-        "task": task
-    }
-
-    try:
-        response = requests.post(url, json=payload)
-
-        if response.status_code == 200:
-            result = response.json()["result"]
-            st.success("Response received!")
-            st.write(result)
+# ==========================================
+# Sidebar: Authentication
+# ==========================================
+with st.sidebar:
+    st.header("Authentication")
+    
+    if st.session_state.access_token is None:
+        auth_mode = st.radio("Choose Action", ["Login", "Register"])
+        
+        if auth_mode == "Login":
+            with st.form("login_form"):
+                email = st.text_input("Email")
+                password = st.text_input("Password", type="password")
+                submit = st.form_submit_button("Login")
+                
+                if submit:
+                    # Note: OAuth2 expects form data (data=), not JSON
+                    response = requests.post(
+                        f"{API_URL}/auth/login",
+                        data={"username": email, "password": password}
+                    )
+                    if response.status_code == 200:
+                        st.session_state.access_token = response.json().get("access_token")
+                        st.success("Logged in successfully!")
+                        st.rerun()
+                    else:
+                        st.error(f"Login failed: {response.text}")
+                        
         else:
-            st.error(f"Error: {response.status_code}")
-    except Exception as e:
-        st.error(f"Connection error: {e}")
+            with st.form("register_form"):
+                new_email = st.text_input("Email")
+                new_username = st.text_input("Username")
+                new_password = st.text_input("Password", type="password")
+                submit = st.form_submit_button("Register")
+                
+                if submit:
+                    response = requests.post(
+                        f"{API_URL}/auth/register",
+                        json={"email": new_email, "username": new_username, "password": new_password}
+                    )
+                    if response.status_code == 200:
+                        st.success("Registration successful! You can now log in.")
+                    else:
+                        st.error(f"Registration failed: {response.text}")
+    else:
+        st.success("You are authenticated.")
+        
+        # Test the /me endpoint
+        if st.button("Get My Profile"):
+            response = requests.get(f"{API_URL}/auth/me", headers=get_headers())
+            if response.status_code == 200:
+                st.json(response.json())
+            else:
+                st.error("Failed to fetch profile. Token might be expired.")
+                
+        if st.button("Logout"):
+            st.session_state.access_token = None
+            st.rerun()
+
+# ==========================================
+# Main Content: Endpoint Testing
+# ==========================================
+tab1, tab2 = st.tabs(["Test Example Endpoint", "Test LLM Summarizer"])
+
+with tab1:
+    st.header("Example Logic")
+    st.write("Tests the `/example/` endpoint.")
+    
+    with st.form("example_form"):
+        name_input = st.text_input("Your Name", value="Developer")
+        task_input = st.text_input("Task", value="Test the connection")
+        run_example = st.form_submit_button("Run Example")
+        
+        if run_example:
+            with st.spinner("Processing..."):
+                res = requests.post(
+                    f"{API_URL}/example/", 
+                    json={"name": name_input, "task": task_input}
+                )
+                if res.status_code == 200:
+                    st.success(res.json().get("result"))
+                else:
+                    st.error(f"Error: {res.text}")
+
+with tab2:
+    st.header("AI Summarizer")
+    st.write("Tests the `/llm/summarize` endpoint. Note: The backend has a rate limit of 5 requests per minute.")
+    
+    with st.form("llm_form"):
+        text_to_summarize = st.text_area("Text to summarize", height=150)
+        run_llm = st.form_submit_button("Summarize")
+        
+        if run_llm:
+            if not text_to_summarize:
+                st.warning("Please enter some text first.")
+            else:
+                with st.spinner("Asking Gemini..."):
+                    res = requests.post(
+                        f"{API_URL}/llm/summarize", 
+                        json={"text": text_to_summarize}
+                    )
+                    if res.status_code == 200:
+                        st.info(res.json().get("summary"))
+                    elif res.status_code == 429:
+                        st.error("Rate limit exceeded! Please wait a minute.")
+                    else:
+                        st.error(f"Error: {res.text}")
