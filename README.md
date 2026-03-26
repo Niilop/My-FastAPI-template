@@ -287,11 +287,3 @@ It balances:
 * Capability (auth, DB, LLM, ML ready)
 
 ---
-
-If you want, I can also:
-
-* trim this into a “portfolio-friendly” version (short + impressive)
-* or add diagrams (architecture / infra) for GitHub README visuals
-
-This template bridges the gap between a **simple script** and a **production-ready microservice**. It is intentionally modular, allowing you to swap out the LLM provider or ML model while keeping the core infrastructure intact.
-
