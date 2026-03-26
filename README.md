@@ -179,7 +179,7 @@ alembic upgrade head
 
 ## 🛠 Database Migrations (Alembic)
 
-We use Alembic to manage database changes. **Never** use `Base.metadata.create_all()` in the code.
+We use Alembic to manage database changes.
 
 ### To Create a New Migration
 
