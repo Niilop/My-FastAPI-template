@@ -14,7 +14,7 @@ from core.database import get_db
 from sqlalchemy.orm import Session
 
 # Create all database tables
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 
 # Load settings once at startup
 settings = get_settings()

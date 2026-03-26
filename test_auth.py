@@ -26,12 +26,32 @@ except Exception as e:
 # If registration successful, test login
 if response.status_code == 200:
     print("\nTesting login...")
-    login_data = {
-        "email": user_data["email"],
+    
+    # OAuth2 standard uses 'username' as the key, even if you are passing an email
+    login_payload = {
+        "username": user_data["email"], 
         "password": user_data["password"]
     }
+    
     try:
-        response = requests.post(f"{BASE_URL}/auth/login", json=login_data)
+        # Change 'json=login_data' to 'data=login_payload'
+        response = requests.post(f"{BASE_URL}/auth/login", data=login_payload)
+        print(f"Status: {response.status_code}")
+        print(f"Response: {json.dumps(response.json(), indent=2)}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+if response.status_code == 200:
+    token = response.json().get("access_token")
+    print("\nTesting 'Get Me' endpoint...")
+    
+    # We must pass the token in the Headers, not the Body
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+    
+    try:
+        response = requests.get(f"{BASE_URL}/auth/me", headers=headers)
         print(f"Status: {response.status_code}")
         print(f"Response: {json.dumps(response.json(), indent=2)}")
     except Exception as e:

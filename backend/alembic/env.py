@@ -8,7 +8,7 @@ import os
 import sys
 
 # Add the backend directory to the path
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from core.config import get_settings
 from core.database import Base
