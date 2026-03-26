@@ -66,8 +66,6 @@ The goal is to keep the system **structured and scalable**, while still lightwei
 
 ---
 
-## Project Structure
-
 # Project Structure
 
 ```
