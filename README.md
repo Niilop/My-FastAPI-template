@@ -18,7 +18,7 @@ The goal is to keep the system **structured and scalable**, while still lightwei
 ## Features
 
 ### Core API
-
+* Runs a FastAPI server using Uvicorn
 * FastAPI application with modular routing
 * Automatic Swagger docs (`/docs`)
 * Health (`/health`) and metrics (`/metrics`) endpoints
