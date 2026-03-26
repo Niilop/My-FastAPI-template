@@ -1,4 +1,4 @@
----
+
 
 # My FastAPI Template
 
@@ -14,7 +14,6 @@ This repository is a **modular FastAPI backend template** designed for building 
 
 The goal is to keep the system **structured and scalable**, while still lightweight enough for rapid experimentation.
 
----
 
 ## Features
 
