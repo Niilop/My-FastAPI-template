@@ -1,5 +1,6 @@
 # backend/api/endpoints/auth.py
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from core.database import get_db
 from models.schemas import UserCreate, UserLogin, Token, UserResponse
@@ -8,6 +9,9 @@ from services.auth_service import (
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+# This tells FastAPI where the client should send the login request to get a token
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 @router.post("/register", response_model=UserResponse)
@@ -26,14 +30,13 @@ def register(user_create: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+
 @router.post("/login", response_model=Token)
-def login(user_login: UserLogin, db: Session = Depends(get_db)):
-    """
-    Login with email and password.
-    
-    Returns an access token to use for authenticated requests.
-    """
-    user = authenticate_user(db, user_login.email, user_login.password)
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # Note: OAuth2PasswordRequestForm uses 'username' by default, 
+    # so we pass form_data.username instead of email. 
+    # Your frontend will need to send the email in the "username" field of the form data.
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -44,20 +47,8 @@ def login(user_login: UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
-
 @router.get("/me", response_model=UserResponse)
-def get_current_user(token: str = None, db: Session = Depends(get_db)):
-    """
-    Get the current authenticated user's information.
-    
-    Requires a valid JWT token in the Authorization header.
-    """
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
-        )
-    
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     token_data = decode_token(token)
     if not token_data:
         raise HTTPException(
