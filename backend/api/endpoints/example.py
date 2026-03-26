@@ -7,6 +7,6 @@ router = APIRouter(prefix="/example", tags=["Example"])
 
 @router.post("/", response_model=ExampleResponse)
 def run_example(request: ExampleRequest):
-    result = run_example_logic(request.name, request.task)
+    result = run_example_logic(request)
     return ExampleResponse(result=result)
     
