@@ -81,9 +81,13 @@ def create_user(db: Session, user_create: UserCreate) -> User:
     return db_user
 
 
-def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
-    """Authenticate a user by email and password."""
-    user = db.query(User).filter(User.email == email).first()
+def authenticate_user(db: Session, identifier: str, password: str) -> Optional[User]:
+    """Authenticate a user by email OR username."""
+    # Search for a match in either the email or username column
+    user = db.query(User).filter(
+        (User.email == identifier) | (User.username == identifier)
+    ).first()
+    
     if not user:
         return None
     if not verify_password(password, user.password_hash):

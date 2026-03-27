@@ -33,17 +33,17 @@ def register(user_create: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    # Note: OAuth2PasswordRequestForm uses 'username' by default, 
-    # so we pass form_data.username instead of email. 
-    # Your frontend will need to send the email in the "username" field of the form data.
+    # form_data.username will now hold either the email or the username provided by the client
     user = authenticate_user(db, form_data.username, form_data.password)
+    
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+            detail="Invalid credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
+    # Always use the user's actual email for the token payload, regardless of how they logged in
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
 
