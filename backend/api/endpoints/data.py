@@ -1,12 +1,13 @@
 # backend/api/endpoints/data.py
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
-from requests import Session
+from sqlalchemy.orm import Session
 from models.schemas import DataCatalogResponse
 from core.database import get_db
 from models.database import User
 from services.auth_service import  decode_token, get_user_by_email
 from services.data_service import process_and_save_dataset, get_user_datasets, count_user_datasets
 from api.endpoints.auth import oauth2_scheme, get_current_user
+from werkzeug.utils import secure_filename
 from typing import List
 import shutil
 import os
@@ -24,6 +25,10 @@ async def upload_data(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)  # <** MAGIC HAPPENS HERE
 ):
+    # Validate file type
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Only CSV files are supported.")
+
     # 1. Limit Check: Enforce maximum of 10 datasets
     current_count = count_user_datasets(db, current_user.id)
     if current_count >= 10:
@@ -40,7 +45,9 @@ async def upload_data(
         )
     
     # 3. Save physical file
-    file_location = f"data/raw/{file.filename}"
+    safe_filename = os.path.basename(file.filename)
+    file_location = f"data/raw/{safe_filename}"
+
     os.makedirs("data/raw", exist_ok=True)
     
     with open(file_location, "wb") as buffer:

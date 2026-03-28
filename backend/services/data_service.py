@@ -10,8 +10,10 @@ from typing import List
 UPLOAD_DIR = "data/raw"
 
 def process_and_save_dataset(db: Session, user_id: int, file_path: str, name: str, description: str):
+    
     # 1. Profile the data
     df = pd.read_csv(file_path) # Assume CSV for now
+    
     
     metadata = {
         "num_rows": int(df.shape[0]),
