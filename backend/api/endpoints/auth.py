@@ -11,7 +11,7 @@ from services.auth_service import (
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 # This tells FastAPI where the client should send the login request to get a token
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 @router.post("/register", response_model=UserResponse)

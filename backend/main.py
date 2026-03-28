@@ -5,7 +5,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from typing import Optional
-from api.endpoints import example, llm, auth
+from api.endpoints import example, llm, auth, data
 from core.config import Settings, get_settings
 from core.rate_limit import limiter
 from core.database import Base, engine
@@ -52,6 +52,7 @@ def verify_token(authorization: Optional[str] = Header(None)) -> Optional[dict]:
 app.include_router(auth.router)
 app.include_router(example.router)
 app.include_router(llm.router)
+app.include_router(data.router)
 
 # Root endpoint
 @app.get("/")
