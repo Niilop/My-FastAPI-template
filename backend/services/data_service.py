@@ -39,3 +39,7 @@ def process_and_save_dataset(db: Session, user_id: int, file_path: str, name: st
 def get_user_datasets(db: Session, user_id: int) -> List[DataCatalog]:
     """Retrieve all datasets uploaded by a specific user."""
     return db.query(DataCatalog).filter(DataCatalog.user_id == user_id).all()
+
+def count_user_datasets(db: Session, user_id: int) -> int:
+    """Count the total number of datasets uploaded by a specific user."""
+    return db.query(DataCatalog).filter(DataCatalog.user_id == user_id).count()
