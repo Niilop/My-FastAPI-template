@@ -1,17 +1,12 @@
 # backend/main.py
-from fastapi import FastAPI, Depends, Header, HTTPException, status
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from typing import Optional
 from api.endpoints import example, llm, auth, data
 from core.config import Settings, get_settings
 from core.rate_limit import limiter
 from core.database import Base, engine
-from services.auth_service import decode_token, get_user_by_email
-from core.database import get_db
-from sqlalchemy.orm import Session
 
 # Create all database tables
 # Base.metadata.create_all(bind=engine)
@@ -32,20 +27,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
-
-
-def verify_token(authorization: Optional[str] = Header(None)) -> Optional[dict]:
-    """Extract and verify JWT token from Authorization header."""
-    if not authorization:
-        return None
-    
-    try:
-        scheme, token = authorization.split()
-        if scheme.lower() != "bearer":
-            return None
-        return decode_token(token)
-    except (ValueError, IndexError):
-        return None
 
 
 # Include routes

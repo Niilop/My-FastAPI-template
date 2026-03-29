@@ -2,7 +2,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Text, Float, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from core.database import Base
-from datetime import datetime
+from datetime import datetime, timezone
 import enum
 
 
@@ -13,8 +13,8 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     username = Column(String(100), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     settings = Column(JSON, default={})  # Store user preferences
     
     # Relationships
@@ -32,8 +32,8 @@ class DataCatalog(Base):
     file_path = Column(String(500), nullable=False)
     description = Column(Text, default="")
     data_metadata = Column(JSON, default={})  # Store shape, columns, data types, etc.
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     owner = relationship("User", back_populates="data_catalogs")
@@ -58,8 +58,8 @@ class Model(Base):
     file_path = Column(String(500), nullable=False)
     dataset_ids = Column(JSON, default=[])  # List of DataCatalog IDs used for training
     metrics = Column(JSON, default={})  # Store accuracy, precision, recall, rmse, etc.
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     owner = relationship("User", back_populates="models")
@@ -82,10 +82,10 @@ class Pipeline(Base):
     description = Column(Text, default="")
     status = Column(SQLEnum(PipelineStatus), default=PipelineStatus.INACTIVE)
     schedule = Column(String(100), default="")  # e.g., "0 0 * * *" for cron
-    config = Column(JSON, default={})  # Store pipeline-specific configuration
-    pipeline_last_run = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    pipeline_config = Column(JSON, default={})  # Store pipeline-specific configuration
+    last_run = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     owner = relationship("User", back_populates="pipelines")

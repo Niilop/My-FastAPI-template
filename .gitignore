@@ -1,4 +1,5 @@
 # .gitignore
+.contextwindow
 
 # Environments
 .env

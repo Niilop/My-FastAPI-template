@@ -4,9 +4,8 @@ from sqlalchemy.orm import Session
 from models.schemas import DataCatalogResponse
 from core.database import get_db
 from models.database import User
-from services.auth_service import  decode_token, get_user_by_email
 from services.data_service import process_and_save_dataset, get_user_datasets, count_user_datasets
-from api.endpoints.auth import oauth2_scheme, get_current_user
+from api.endpoints.auth import get_current_user
 from werkzeug.utils import secure_filename
 from typing import List
 import shutil
@@ -45,7 +44,7 @@ async def upload_data(
         )
     
     # 3. Save physical file
-    safe_filename = os.path.basename(file.filename)
+    safe_filename = secure_filename(file.filename)
     file_location = f"data/raw/{safe_filename}"
 
     os.makedirs("data/raw", exist_ok=True)

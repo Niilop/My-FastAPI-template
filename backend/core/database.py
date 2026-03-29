@@ -1,6 +1,7 @@
 # backend/core/database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
+from typing import Generator
 from core.config import get_settings
 
 settings = get_settings()
@@ -25,7 +26,7 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 
-def get_db() -> Session:
+def get_db() -> Generator[Session, None, None]:
     """
     Dependency injection for database sessions.
     Usage: def endpoint(db: Session = Depends(get_db))
