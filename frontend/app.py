@@ -102,24 +102,47 @@ with tab1:
 
 with tab2:
     st.header("AI Summarizer")
-    st.write("Tests the `/llm/summarize` endpoint. Note: The backend has a rate limit of 5 requests per minute.")
-    
+    st.write("Tests the `/llm/summarize/stream` endpoint. Note: The backend has a rate limit of 5 requests per minute.")
+
     with st.form("llm_form"):
         text_to_summarize = st.text_area("Text to summarize", height=150)
         run_llm = st.form_submit_button("Summarize")
-        
-        if run_llm:
-            if not text_to_summarize:
-                st.warning("Please enter some text first.")
-            else:
-                with st.spinner("Asking Gemini..."):
-                    res = requests.post(
-                        f"{API_URL}/llm/summarize", 
-                        json={"text": text_to_summarize}
-                    )
-                    if res.status_code == 200:
-                        st.info(res.json().get("summary"))
-                    elif res.status_code == 429:
+
+    if run_llm:
+        if not text_to_summarize:
+            st.warning("Please enter some text first.")
+        else:
+            output = st.empty()
+            full_response = ""
+            try:
+                with requests.post(
+                    f"{API_URL}/llm/summarize/stream",
+                    json={"text": text_to_summarize},
+                    headers=get_headers(),
+                    stream=True,
+                    timeout=60,
+                ) as res:
+                    if res.status_code == 429:
                         st.error("Rate limit exceeded! Please wait a minute.")
-                    else:
+                    elif res.status_code != 200:
                         st.error(f"Error: {res.text}")
+                    else:
+                        import json as _json
+                        for line in res.iter_lines():
+                            if not line:
+                                continue
+                            decoded = line.decode("utf-8")
+                            if not decoded.startswith("data: "):
+                                continue
+                            data = decoded[6:]
+                            if data == "[DONE]":
+                                break
+                            chunk = _json.loads(data)
+                            if chunk.startswith("[ERROR]"):
+                                st.error(chunk)
+                                break
+                            full_response += chunk
+                            output.info(full_response + " ▌")
+                        output.info(full_response)
+            except requests.exceptions.RequestException as e:
+                st.error(f"Connection error: {e}")
