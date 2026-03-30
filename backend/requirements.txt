@@ -6,6 +6,8 @@ pydantic-settings
 python-dotenv
 langchain
 langchain_google_genai
+langchain_openai
+langchain_anthropic
 slowapi
 pydantic[email]
 sqlalchemy==2.0.23

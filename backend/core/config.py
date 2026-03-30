@@ -8,9 +8,18 @@ class Settings(BaseSettings):
     app_name: str = "DS API"
     debug: bool = True
     
-    # API Keys and Models
-    api_key: SecretStr
+    # LLM Provider: gemini | openai | anthropic
+    llm_provider: str
+
+    # API Keys — only the one matching llm_provider is required at runtime
+    api_key: SecretStr = SecretStr("")
+    openai_api_key: SecretStr = SecretStr("")
+    anthropic_api_key: SecretStr = SecretStr("")
+
+    # Model names per provider
     gemini_model: str
+    openai_model: str
+    anthropic_model: str
     
     # Database Configuration
     database_url: str
