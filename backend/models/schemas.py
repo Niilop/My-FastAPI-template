@@ -99,6 +99,28 @@ class ModelResponse(BaseModel):
         from_attributes = True
 
 
+# ============= RAG Schemas =============
+class DocumentIngestRequest(BaseModel):
+    source: str          # label for this document (e.g. filename)
+    text: str            # full document text to chunk and embed
+
+
+class DocumentIngestResponse(BaseModel):
+    source: str
+    chunks_created: int
+
+
+class RAGQueryRequest(BaseModel):
+    question: str
+    top_k: int = 4       # number of chunks to retrieve
+
+
+class RAGQueryResponse(BaseModel):
+    answer: str
+    sources: List[str]   # deduplicated source labels
+    chunks: List[str]    # raw retrieved chunks
+
+
 # ============= Pipeline Schemas =============
 class PipelineCreate(BaseModel):
     name: str

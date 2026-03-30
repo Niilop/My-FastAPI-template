@@ -3,10 +3,10 @@ from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from api.endpoints import example, llm, auth, data
+from api.endpoints import example, llm, auth, data, rag
 from core.config import Settings, get_settings
 from core.rate_limit import limiter
-from core.database import Base, engine
+from core.database import get_db
 
 # Create all database tables
 # Base.metadata.create_all(bind=engine)
@@ -34,6 +34,7 @@ app.include_router(auth.router)
 app.include_router(example.router)
 app.include_router(llm.router)
 app.include_router(data.router)
+app.include_router(rag.router)
 
 # Root endpoint
 @app.get("/")

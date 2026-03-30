@@ -8,6 +8,8 @@ langchain
 langchain_google_genai
 langchain_openai
 langchain_anthropic
+langchain-text-splitters
+pgvector
 slowapi
 pydantic[email]
 sqlalchemy==2.0.23

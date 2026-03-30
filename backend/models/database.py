@@ -1,9 +1,12 @@
 # backend/models/database.py
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, JSON, Text, Float, Enum as SQLEnum
 from sqlalchemy.orm import relationship
+from pgvector.sqlalchemy import Vector
 from core.database import Base
 from datetime import datetime, timezone
 import enum
+
+EMBEDDING_DIM = 768  # Google text-embedding-004 default
 
 
 class User(Base):
@@ -21,6 +24,7 @@ class User(Base):
     data_catalogs = relationship("DataCatalog", back_populates="owner", cascade="all, delete-orphan")
     models = relationship("Model", back_populates="owner", cascade="all, delete-orphan")
     pipelines = relationship("Pipeline", back_populates="owner", cascade="all, delete-orphan")
+    document_chunks = relationship("DocumentChunk", back_populates="owner", cascade="all, delete-orphan")
 
 
 class DataCatalog(Base):
@@ -89,3 +93,16 @@ class Pipeline(Base):
     
     # Relationships
     owner = relationship("User", back_populates="pipelines")
+
+
+class DocumentChunk(Base):
+    __tablename__ = "document_chunks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    source = Column(String(255), nullable=False)   # filename or label supplied by caller
+    content = Column(Text, nullable=False)
+    embedding = Column(Vector(EMBEDDING_DIM), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    owner = relationship("User", back_populates="document_chunks")
