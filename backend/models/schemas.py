@@ -121,6 +121,49 @@ class RAGQueryResponse(BaseModel):
     chunks: List[str]    # raw retrieved chunks
 
 
+# ============= Chat Schemas =============
+class ChatMessageRequest(BaseModel):
+    message: str
+    title: Optional[str] = None   # only used when creating a new conversation
+
+
+class MessageResponse(BaseModel):
+    id: int
+    role: str
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ConversationResponse(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    messages: List[MessageResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class ConversationSummary(BaseModel):
+    id: int
+    title: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class ChatReply(BaseModel):
+    conversation_id: int
+    message_id: int    # DB id of the saved assistant message
+    reply: str
+
+
 # ============= Pipeline Schemas =============
 class PipelineCreate(BaseModel):
     name: str

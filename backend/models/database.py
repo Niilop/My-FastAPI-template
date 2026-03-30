@@ -25,6 +25,7 @@ class User(Base):
     models = relationship("Model", back_populates="owner", cascade="all, delete-orphan")
     pipelines = relationship("Pipeline", back_populates="owner", cascade="all, delete-orphan")
     document_chunks = relationship("DocumentChunk", back_populates="owner", cascade="all, delete-orphan")
+    conversations = relationship("Conversation", back_populates="owner", cascade="all, delete-orphan")
 
 
 class DataCatalog(Base):
@@ -93,6 +94,31 @@ class Pipeline(Base):
     
     # Relationships
     owner = relationship("User", back_populates="pipelines")
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(255), nullable=False, default="New conversation")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    owner = relationship("User", back_populates="conversations")
+    messages = relationship("Message", back_populates="conversation", cascade="all, delete-orphan", order_by="Message.created_at")
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id"), nullable=False, index=True)
+    role = Column(String(20), nullable=False)   # "user" | "assistant"
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    conversation = relationship("Conversation", back_populates="messages")
 
 
 class DocumentChunk(Base):
