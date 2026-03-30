@@ -12,7 +12,7 @@ from models.schemas import (
     ConversationResponse,
     ConversationSummary,
 )
-from services.chat_service import chat, create_conversation, get_conversation, list_conversations
+from services.chat_service import chat, create_conversation, delete_conversation, get_conversation, list_conversations
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
 
@@ -53,6 +53,18 @@ def get_conversations(
     current_user: User = Depends(get_current_user),
 ):
     return list_conversations(db, current_user.id)
+
+
+@router.delete("/{conversation_id}", status_code=204, summary="Delete a conversation and its messages")
+def delete_conversation_endpoint(
+    conversation_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    conv = get_conversation(db, current_user.id, conversation_id)
+    if conv is None:
+        raise HTTPException(status_code=404, detail="Conversation not found.")
+    delete_conversation(db, conv)
 
 
 @router.get("/{conversation_id}", response_model=ConversationResponse, summary="Get full conversation with messages")

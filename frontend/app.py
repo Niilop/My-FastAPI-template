@@ -1,12 +1,17 @@
+import json
 import streamlit as st
 import requests
 
 # Configuration
 API_URL = "http://backend:8000/"
 
-# Initialize session state for auth token
+# Initialize session state
 if "access_token" not in st.session_state:
     st.session_state.access_token = None
+if "active_conversation_id" not in st.session_state:
+    st.session_state.active_conversation_id = None
+if "chat_messages" not in st.session_state:
+    st.session_state.chat_messages = []   # list of {role, content}
 
 def get_headers():
     if st.session_state.access_token:
@@ -78,7 +83,7 @@ with st.sidebar:
 # ==========================================
 # Main Content: Endpoint Testing
 # ==========================================
-tab1, tab2 = st.tabs(["Test Example Endpoint", "Test LLM Summarizer"])
+tab1, tab2, tab3 = st.tabs(["Test Example Endpoint", "Test LLM Summarizer", "Chat"])
 
 with tab1:
     st.header("Example Logic")
@@ -127,7 +132,6 @@ with tab2:
                     elif res.status_code != 200:
                         st.error(f"Error: {res.text}")
                     else:
-                        import json as _json
                         for line in res.iter_lines():
                             if not line:
                                 continue
@@ -137,7 +141,7 @@ with tab2:
                             data = decoded[6:]
                             if data == "[DONE]":
                                 break
-                            chunk = _json.loads(data)
+                            chunk = json.loads(data)
                             if chunk.startswith("[ERROR]"):
                                 st.error(chunk)
                                 break
@@ -146,3 +150,96 @@ with tab2:
                         output.info(full_response)
             except requests.exceptions.RequestException as e:
                 st.error(f"Connection error: {e}")
+
+with tab3:
+    st.header("Chat")
+
+    if st.session_state.access_token is None:
+        st.info("Please log in from the sidebar to use the chat.")
+    else:
+        # ── Sidebar conversation list ────────────────────────────────────────
+        with st.sidebar:
+            st.divider()
+            st.subheader("Conversations")
+
+            if st.button("New conversation", use_container_width=True):
+                st.session_state.active_conversation_id = None
+                st.session_state.chat_messages = []
+                st.rerun()
+
+            res = requests.get(f"{API_URL}/chat/", headers=get_headers(), timeout=10)
+            if res.status_code == 200:
+                for conv in res.json():
+                    label = f"{conv['title'][:32]}..." if len(conv["title"]) > 32 else conv["title"]
+                    col_title, col_del = st.columns([5, 1])
+                    with col_title:
+                        if st.button(label, key=f"conv_{conv['id']}", use_container_width=True):
+                            detail = requests.get(
+                                f"{API_URL}/chat/{conv['id']}",
+                                headers=get_headers(),
+                                timeout=10,
+                            )
+                            if detail.status_code == 200:
+                                data = detail.json()
+                                st.session_state.active_conversation_id = conv["id"]
+                                st.session_state.chat_messages = [
+                                    {"role": m["role"], "content": m["content"]}
+                                    for m in data["messages"]
+                                ]
+                                st.rerun()
+                    with col_del:
+                        if st.button("🗑", key=f"del_{conv['id']}"):
+                            requests.delete(
+                                f"{API_URL}/chat/{conv['id']}",
+                                headers=get_headers(),
+                                timeout=10,
+                            )
+                            if st.session_state.active_conversation_id == conv["id"]:
+                                st.session_state.active_conversation_id = None
+                                st.session_state.chat_messages = []
+                            st.rerun()
+
+        # ── Chat history ─────────────────────────────────────────────────────
+        for msg in st.session_state.chat_messages:
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
+
+        # ── Input ─────────────────────────────────────────────────────────────
+        user_input = st.chat_input("Type a message...")
+        if user_input:
+            st.session_state.chat_messages.append({"role": "user", "content": user_input})
+            with st.chat_message("user"):
+                st.markdown(user_input)
+
+            with st.chat_message("assistant"):
+                placeholder = st.empty()
+                placeholder.markdown("_Thinking..._")
+                try:
+                    if st.session_state.active_conversation_id is None:
+                        # Start new conversation
+                        res = requests.post(
+                            f"{API_URL}/chat/",
+                            json={"message": user_input},
+                            headers=get_headers(),
+                            timeout=60,
+                        )
+                    else:
+                        res = requests.post(
+                            f"{API_URL}/chat/{st.session_state.active_conversation_id}",
+                            json={"message": user_input},
+                            headers=get_headers(),
+                            timeout=60,
+                        )
+
+                    if res.status_code == 200:
+                        data = res.json()
+                        reply = data["reply"]
+                        st.session_state.active_conversation_id = data["conversation_id"]
+                        st.session_state.chat_messages.append({"role": "assistant", "content": reply})
+                        placeholder.markdown(reply)
+                    elif res.status_code == 429:
+                        placeholder.error("Rate limit exceeded. Please wait a moment.")
+                    else:
+                        placeholder.error(f"Error: {res.text}")
+                except requests.exceptions.RequestException as e:
+                    placeholder.error(f"Connection error: {e}")

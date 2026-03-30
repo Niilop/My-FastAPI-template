@@ -42,6 +42,11 @@ def _save_message(db: Session, conversation_id: int, role: str, content: str) ->
     return msg
 
 
+def delete_conversation(db: Session, conversation: Conversation) -> None:
+    db.delete(conversation)
+    db.commit()
+
+
 def chat(db: Session, conversation: Conversation, user_text: str) -> tuple[str, Message]:
     """
     Append the user turn to history, call the LLM with full context,
