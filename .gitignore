@@ -1,6 +1,7 @@
 # .gitignore
 .contextwindow
 .claude
+.vscode
 
 # Environments
 .env
