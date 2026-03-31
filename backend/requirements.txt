@@ -6,6 +6,7 @@ pydantic-settings
 python-dotenv
 langchain
 langchain_google_genai
+google-generativeai
 langchain_openai
 langchain_anthropic
 langchain-text-splitters

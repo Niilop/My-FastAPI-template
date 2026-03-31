@@ -164,6 +164,38 @@ class ChatReply(BaseModel):
     reply: str
 
 
+# ============= Background Job Schemas =============
+class JobSubmitResponse(BaseModel):
+    job_id: str
+    status: str
+
+
+class JobStatusResponse(BaseModel):
+    job_id: str
+    job_type: str
+    status: str
+    result: Optional[dict] = None
+    error: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+        populate_by_name = True
+
+    @classmethod
+    def from_orm_job(cls, job) -> "JobStatusResponse":
+        return cls(
+            job_id=job.id,
+            job_type=job.job_type,
+            status=job.status.value if hasattr(job.status, "value") else job.status,
+            result=job.result,
+            error=job.error,
+            created_at=job.created_at,
+            updated_at=job.updated_at,
+        )
+
+
 # ============= Pipeline Schemas =============
 class PipelineCreate(BaseModel):
     name: str

@@ -1,4 +1,5 @@
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from google import genai
+from google.genai import types
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sqlalchemy.orm import Session
 
@@ -7,14 +8,21 @@ from models.database import DocumentChunk
 
 settings = get_settings()
 
-# Embeddings are always Google text-embedding-004 (768-dim).
-# The LLM provider (llm_provider setting) is independent of this choice.
-_embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/text-embedding-004",
-    google_api_key=settings.api_key.get_secret_value(),
-)
+EMBEDDING_MODEL = "gemini-embedding-001"
+
+# Use google-genai directly with v1 (stable) API to avoid v1beta 404s.
+client = genai.Client(api_key=settings.api_key.get_secret_value())
 
 _splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=100)
+
+# output_dimensionality is required to avoid 2048-dim default and subsequent cosine_distance errors.
+def _embed(texts: list[str]) -> list[list[float]]:
+    response = client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=texts,
+        config=types.EmbedContentConfig(output_dimensionality=768),
+    )
+    return [e.values for e in response.embeddings]
 
 
 def ingest_document(db: Session, user_id: int, source: str, text: str) -> int:
@@ -23,7 +31,7 @@ def ingest_document(db: Session, user_id: int, source: str, text: str) -> int:
     if not chunks:
         return 0
 
-    vectors = _embeddings.embed_documents(chunks)
+    vectors = _embed(chunks)
 
     db.add_all(
         DocumentChunk(user_id=user_id, source=source, content=chunk, embedding=vec)
@@ -35,7 +43,7 @@ def ingest_document(db: Session, user_id: int, source: str, text: str) -> int:
 
 def retrieve_chunks(db: Session, user_id: int, query: str, k: int = 4) -> list[DocumentChunk]:
     """Embed the query and return the k nearest chunks via cosine distance."""
-    query_vector = _embeddings.embed_query(query)
+    query_vector = _embed([query])[0]
 
     return (
         db.query(DocumentChunk)

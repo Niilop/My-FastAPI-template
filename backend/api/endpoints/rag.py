@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request, Depends
 from langchain_core.prompts import PromptTemplate
 from sqlalchemy.orm import Session
 
@@ -9,9 +9,11 @@ from models.database import User
 from models.schemas import (
     DocumentIngestRequest,
     DocumentIngestResponse,
+    JobSubmitResponse,
     RAGQueryRequest,
     RAGQueryResponse,
 )
+from services.job_service import create_job, run_job
 from services.llm_service import llm
 from services.rag_service import ingest_document, retrieve_chunks
 
@@ -40,6 +42,26 @@ def ingest(
         return DocumentIngestResponse(source=body.source, chunks_created=n)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/ingest/async", response_model=JobSubmitResponse)
+@limiter.limit("20/minute")
+def ingest_async(
+    request: Request,
+    body: DocumentIngestRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Submit a document for background embedding. Returns a job_id to poll via GET /jobs/{job_id}."""
+    job = create_job(db, current_user.id, "rag_ingest")
+    source, text, user_id = body.source, body.text, current_user.id
+    background_tasks.add_task(
+        run_job,
+        job.id,
+        lambda bg_db: {"source": source, "chunks_created": ingest_document(bg_db, user_id, source, text)},
+    )
+    return JobSubmitResponse(job_id=job.id, status=job.status)
 
 
 @router.post("/query", response_model=RAGQueryResponse)
