@@ -1,289 +1,258 @@
+# FastAPI LLM Template
 
-
-# My FastAPI Template
-
-## Overview
-
-This repository is a **modular FastAPI backend template** designed for building and showcasing **data science and LLM proof-of-concept (POC) projects** including:
-
-* Authentication (JWT-based)
-* Database integration (SQLAlchemy + Alembic)
-* LLM integration (Google Gemini via LangChain)
-* Rate limiting
-* Clean architecture with service layers
-
-The goal is to keep the system **structured and scalable**, while still lightweight enough for rapid experimentation.
-
-
-## Features
-
-### Core API
-* Runs a FastAPI server using Uvicorn
-* FastAPI application with modular routing
-* Automatic Swagger docs (`/docs`)
-* Health (`/health`) and metrics (`/metrics`) endpoints
-
-### Authentication
-
-* User registration and login
-* JWT-based authentication
-* Password hashing with bcrypt
-* Protected route example (`/auth/me`)
-
-### Database
-
-* SQLAlchemy ORM
-* Alembic migrations
-* PostgreSQL-ready (configurable via `.env`)
-* Models:
-
-  * Users
-  * Data Catalogs
-  * ML Models
-  * Pipelines
-
-### LLM Integration
-
-* Google Gemini via LangChain
-* Example: `/llm/summarize`
-* Easily extendable for agents or workflows
-
-### Rate Limiting
-
-* Implemented using `slowapi`
-* Example: summarization endpoint limited to `5 requests/minute`
-
-### Machine Learning Support
-
-* Placeholder ML pipeline structure
-* Model loading and inference service
-* Ready for training + deployment workflows
-
-### Frontend (Minimal)
-
-* Streamlit-based frontend scaffold
-* Runs alongside backend via Docker
+A modular FastAPI backend template for building LLM-powered applications with RAG, persistent chat, async jobs, and multi-provider AI support.
 
 ---
 
-# Project Structure
+## Features
+
+### Authentication
+- JWT-based login (HS256, configurable expiry)
+- User registration with bcrypt password hashing
+- Login via email or username
+- Protected routes via `Depends(get_current_user)`
+
+### Retrieval-Augmented Generation (RAG)
+- Document ingestion with automatic chunking (RecursiveCharacterTextSplitter)
+- Vector embeddings via Google Gemini (768-dim, stored in pgvector)
+- Cosine similarity retrieval from PostgreSQL
+- Sync (`POST /rag/ingest`) and async (`POST /rag/ingest/async`) ingestion
+- LLM-powered query answering with retrieved context
+- Per-user document isolation
+
+### Persistent Chat
+- Multi-turn conversation threading
+- Full message history stored per conversation
+- System prompt support
+- Conversation lifecycle: create, continue, list, delete
+
+### Async Background Jobs
+- UUID-based job tracking
+- States: `PENDING → RUNNING → COMPLETED / FAILED`
+- Poll job status via `GET /jobs/{job_id}`
+- Used for non-blocking RAG ingestion
+
+### LLM Integration
+- Multi-provider support: **Gemini**, **OpenAI**, **Anthropic**
+- Runtime provider selection via `LLM_PROVIDER` env var
+- Streaming text summarization (SSE)
+- LangChain abstraction for easy provider swapping
+
+### Data Management
+- CSV upload with validation (10 MB max, 10 datasets per user)
+- Automatic metadata extraction
+- Persistent catalog with timestamps
+
+### Rate Limiting
+- slowapi-based throttling per endpoint
+- Returns HTTP 429 when exceeded
+
+### Frontend
+- Streamlit UI with login/register, chat interface, and API testing
+
+---
+
+## Project Structure
 
 ```
-backend/
-├── __pycache__
-├── alembic
-│   ├── __pycache__
-│   ├── versions
-│   │   ├── __pycache__
-│   │   ├── __init__.py
-│   │   └── 001_initial.py
-│   ├── __init__.py
-│   ├── env.py
-│   └── script.py.mako
-├── api
-│   └── endpoints
-│       ├── __pycache__
-│       ├── agent.py
-│       ├── auth.py
-│       ├── example.py
-│       └── llm.py
-├── core
-│   ├── __pycache__
-│   ├── config.py
-│   ├── database.py
-│   ├── logging.py
-│   └── rate_limit.py
-├── ml_models
-│   └── model.pkl
-├── models
-│   ├── __pycache__
-│   ├── database.py
-│   └── schemas.py
-├── pipelines
-│   └── training.py
-├── services
-│   ├── __pycache__
-│   ├── auth_service.py
-│   ├── example_service.py
-│   ├── llm_service.py
-│   └── ml_service.py
-├── __init__.py
-├── alembic.ini
-├── Dockerfile
-├── main.py
-├── requirements.txt
-└── test.http
+Template/
+├── backend/
+│   ├── api/endpoints/
+│   │   ├── auth.py           # Registration, login, /me
+│   │   ├── chat.py           # Conversation threading
+│   │   ├── rag.py            # Document ingestion & querying
+│   │   ├── jobs.py           # Async job status
+│   │   ├── llm.py            # Summarization (streaming)
+│   │   ├── data.py           # CSV upload & catalog
+│   │   └── example.py        # Template endpoint
+│   ├── services/
+│   │   ├── auth_service.py
+│   │   ├── rag_service.py
+│   │   ├── chat_service.py
+│   │   ├── job_service.py
+│   │   ├── llm_service.py
+│   │   └── data_service.py
+│   ├── models/
+│   │   ├── database.py       # SQLAlchemy ORM models
+│   │   └── schemas.py        # Pydantic schemas
+│   ├── core/
+│   │   ├── config.py         # Settings & env vars
+│   │   ├── database.py       # DB engine & session
+│   │   ├── rate_limit.py
+│   │   └── logging.py
+│   ├── alembic/versions/
+│   │   ├── 001_initial.py
+│   │   ├── 002_add_document_chunks.py
+│   │   ├── 003_add_chat_threads.py
+│   │   └── 004_add_background_jobs.py
+│   ├── main.py
+│   └── requirements.txt
+├── frontend/
+│   ├── app.py                # Streamlit UI
+│   └── requirements.txt
+├── tests/
+│   ├── test_auth.py
+│   └── test_rag_service.py
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── external/
+├── docker-compose.yaml
+└── .env.example
 ```
-
 
 ---
 
 ## Architecture
 
-### Request Flow
+```
+Client
+  ↓
+FastAPI Route  (api/endpoints/)
+  ↓
+Pydantic Schema  (validation)
+  ↓
+Service Layer  (business logic)
+  ↓
+PostgreSQL / pgvector / LLM Provider
+  ↓
+JSON Response
+```
 
-```
-Client (Frontend / API call)
-        ↓
-FastAPI Route (api/endpoints)
-        ↓
-Pydantic Schemas (validation)
-        ↓
-Service Layer (business logic)
-        ↓
-Database / LLM / ML Model
-        ↓
-Response (JSON)
-```
+### Database Schema
+
+| Table | Key Columns |
+|---|---|
+| `users` | email, username, password_hash |
+| `conversations` | user_id, title |
+| `messages` | conversation_id, role, content |
+| `document_chunks` | user_id, source, content, embedding (768-dim) |
+| `background_jobs` | id (UUID), job_type, status, result, error |
+| `data_catalogs` | user_id, name, file_path, metadata |
 
 ---
 
-## How to Run the Project
+## Getting Started
 
-### Docker
+### 1. Configure environment
 
-
-### 1. Environment Setup
-
-Copy the template and fill in your local secrets (Gemini API Key, DB Passwords):
-
-Bash
-
-```
+```bash
 cp .env.example .env
+# Fill in: DATABASE_URL, LLM_PROVIDER, GEMINI_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY, JWT_SECRET_KEY
 ```
 
-### 2. Launch the Infrastructure
+### 2. Start services
 
-Use Docker to spin up the PostgreSQL database and the backend services:
-
-Bash
-
-```
+```bash
 docker-compose up --build
 ```
 
-### 3. Initialize the Database
+This starts:
+- `db` — PostgreSQL 16 with pgvector (port 5432)
+- `backend` — FastAPI + Uvicorn with hot reload (port 8000)
+- `frontend` — Streamlit UI (port 8501)
 
-Once the containers are running, apply the migrations to build your tables:
+### 3. Apply migrations
 
-Bash
-
-```
-pip install -r requirements.txt
+```bash
 cd backend
 alembic upgrade head
 ```
 
 ---
 
-## 🛠 Database Migrations (Alembic)
-
-We use Alembic to manage database changes.
-
-### To Create a New Migration
-
-If you change a model in `models/database.py` (e.g., adding a column):
-
-1. **Generate the script:**
-    
-    Bash
-    
-    ```
-    alembic revision --autogenerate -m "description of change"
-    ```
-    
-2. **Review the script:** Check the new file in `alembic/versions/`.
-    
-3. **Apply the change:**
-    
-    Bash
-    
-    ```
-    alembic upgrade head
-    ```
-    
-
----
-
-## 🧪 Testing the API
-
-You can run the automated test script to verify Registration, Login, and JWT Token logic:
-
-Bash
-```
-python scripts/test_auth.py
-```
-
-
----
-
 ## API Endpoints
 
-### Authentication
+### Auth
+| Method | Path | Description |
+|---|---|---|
+| POST | `/auth/register` | Register a new user |
+| POST | `/auth/login` | Get JWT token |
+| GET | `/auth/me` | Current user info |
 
-* `POST /auth/register` → Register user
-* `POST /auth/login` → Get JWT token
-* `GET /auth/me` → Get current user
+### Chat
+| Method | Path | Description |
+|---|---|---|
+| POST | `/chat/conversations` | Create conversation |
+| GET | `/chat/conversations` | List conversations |
+| POST | `/chat/conversations/{id}/messages` | Send message |
+| GET | `/chat/conversations/{id}/messages` | Get history |
+| DELETE | `/chat/conversations/{id}` | Delete conversation |
 
-### Example
+### RAG
+| Method | Path | Description |
+|---|---|---|
+| POST | `/rag/ingest` | Ingest document (sync) |
+| POST | `/rag/ingest/async` | Ingest document (async job) |
+| POST | `/rag/query` | Query with retrieval |
 
-* `POST /example/` → Demo endpoint
+### Jobs
+| Method | Path | Description |
+|---|---|---|
+| GET | `/jobs/{job_id}` | Poll job status |
 
 ### LLM
+| Method | Path | Description |
+|---|---|---|
+| POST | `/llm/summarize` | Streaming summarization |
 
-* `POST /llm/summarize` → Text summarization
+### Data
+| Method | Path | Description |
+|---|---|---|
+| POST | `/data/upload` | Upload CSV |
+| GET | `/data/catalog` | List datasets |
 
 ### System
+| Method | Path | Description |
+|---|---|---|
+| GET | `/health` | Health check |
+| GET | `/metrics` | Basic metrics |
+| GET | `/docs` | Swagger UI |
 
-* `GET /` → Root
-* `GET /health` → Health check
-* `GET /metrics` → Basic metrics
+---
+
+## Database Migrations
+
+```bash
+# Create a new migration after changing models/database.py
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
+alembic upgrade head
+```
 
 ---
 
 ## Testing
 
-You can test the API using:
+```bash
+# Run test suite
+pytest tests/
 
-* Swagger UI → `/docs`
-* VS Code REST Client (`backend/test.http`)
-* Python `requests`
+# Or use the REST client examples
+# tests/test.http (VS Code REST Client)
+```
+
+---
+
+## LLM Provider Configuration
+
+Set `LLM_PROVIDER` in `.env` to switch providers at runtime:
+
+| Value | Provider | Required Key |
+|---|---|---|
+| `gemini` | Google Gemini | `GEMINI_API_KEY` |
+| `openai` | OpenAI | `OPENAI_API_KEY` |
+| `anthropic` | Anthropic | `ANTHROPIC_API_KEY` |
 
 ---
 
 ## Purpose
 
-This repository serves as a **foundation for building**:
+This template is a starting point for building:
+- LLM-powered chat applications
+- RAG systems with persistent vector storage
+- Data pipelines with async processing
+- Multi-tenant AI backends
 
-* LLM-powered apps
-* Data pipelines
-* ML model APIs
-* Experimental backend systems
-
-It is intentionally **modular and extensible**, so new features can be added without restructuring the project.
-
----
-
-## Future Improvements
-
-* Role-based authentication
-* Background jobs (Celery / workers)
-* Better metrics & observability
-* CI/CD pipeline
-* Deployment configs (cloud-ready)
-* More advanced LLM agents
-
----
-
-## Summary
-
-This is a **production-inspired FastAPI template** tailored for **data science and LLM experimentation**.
-
-It balances:
-
-* Simplicity (easy to extend)
-* Structure (clean architecture)
-* Capability (auth, DB, LLM, ML ready)
-
----
+It is intentionally **modular**: swap providers, add endpoints, or extend the service layer without restructuring the project.
