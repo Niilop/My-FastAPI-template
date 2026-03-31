@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(wc -l /c/Users/Niilo/Projects/Template/backend/alembic/versions/*.py)"
-    ]
-  }
-}
