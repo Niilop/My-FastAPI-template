@@ -1,5 +1,6 @@
 # .gitignore
 .contextwindow
+.claude
 
 # Environments
 .env
